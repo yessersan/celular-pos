@@ -248,22 +248,22 @@
 
     {{-- ============ ENCABEZADO ============ --}}
     <div class="center">
-        @if(file_exists(public_path('images/logo.png')))
-            <img src="{{ asset('images/logo.png') }}" class="logo" alt="Céspedes Store">
+        @if(file_exists(public_path('image/logo.jpeg')))
+            <img src="{{ asset('image/logo.jpeg') }}" class="logo" alt="Céspedes Store">
         @endif
 
         <div class="business-name">CÉSPEDES STORE</div>
         <div class="business-info">
             Venta de Repuestos y Accesorios<br>
             Servicio Técnico de Celulares<br>
-            RUC: 12345678901<br>
+            RUC: {{ config("services.business.ruc", "Configurar RUC del negocio") }}<br>
             Tel: 999-999-999<br>
             Av. Principal 123 - Lima
         </div>
 
         <div class="divider-solid"></div>
 
-        <div class="receipt-type">BOLETA DE VENTA</div>
+        <div class="receipt-type">{{ ($sale->document_type ?? 'boleta') === 'factura' ? 'FACTURA' : 'BOLETA DE VENTA' }}</div>
         <div class="receipt-number">{{ $sale->receipt_number }}</div>
     </div>
 
@@ -280,6 +280,13 @@
         <span class="label">CLIENTE:</span>
         <span>{{ $sale->customer_name ?: 'Cliente general' }}</span>
     </div>
+    <div class="info-line">
+        <span class="label">{{ ($sale->document_type ?? 'boleta') === 'factura' ? 'RUC:' : 'DNI:' }}</span>
+        <span>{{ $sale->customer_document ?: '—' }}</span>
+    </div>
+    @if($sale->customer_address)
+    <div class="info-line"><span class="label">DIRECCIÓN:</span><span>{{ $sale->customer_address }}</span></div>
+    @endif
     <div class="info-line">
         <span class="label">MONEDA:</span>
         <span>SOLES (S/)</span>
@@ -324,15 +331,11 @@
     <div class="totals">
         <div class="row">
             <span>Subtotal:</span>
-            <span>S/ {{ number_format($sale->total, 2) }}</span>
+            <span>S/ {{ number_format((float) ($sale->subtotal ?? $sale->total), 2) }}</span>
         </div>
         <div class="row">
-            <span>IGV (18%):</span>
-            <span>S/ {{ number_format($sale->total * 0.18 / 1.18, 2) }}</span>
-        </div>
-        <div class="row">
-            <span>Op. Gravada:</span>
-            <span>S/ {{ number_format($sale->total / 1.18, 2) }}</span>
+            <span>Descuento ({{ number_format((float) ($sale->discount_percent ?? 0), 2) }}%):</span>
+            <span>− S/ {{ number_format((float) ($sale->discount_amount ?? 0), 2) }}</span>
         </div>
         <div class="row grand">
             <span>TOTAL A PAGAR:</span>
