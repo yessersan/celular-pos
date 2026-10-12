@@ -2,6 +2,13 @@
     <h2 class="text-xl font-bold mb-4">Nueva venta</h2>
     @if (session()->has('message')) <div class="bg-green-100 text-green-800 p-3 rounded mb-3">{{ session('message') }}</div> @endif
     @if (session()->has('error')) <div class="bg-red-100 text-red-800 p-3 rounded mb-3">{{ session('error') }}</div> @endif
+    @if ($saleCompleted)
+        <div class="bg-white border rounded p-3 mb-4 flex flex-wrap items-center gap-3">
+            <strong>Comprobante generado: venta #{{ $saleCompleted }}</strong>
+            <a target="_blank" href="{{ route('sale.print', $saleCompleted) }}" class="bg-blue-700 text-white rounded px-3 py-2">Imprimir</a>
+            <a href="{{ route('sale.pdf', $saleCompleted) }}" class="bg-gray-700 text-white rounded px-3 py-2">Descargar PDF</a>
+        </div>
+    @endif
 
     <section class="bg-white border rounded p-4 mb-5">
         <h3 class="font-semibold mb-3">Datos del cliente y comprobante</h3>
