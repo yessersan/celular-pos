@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Boleta {{ $sale->receipt_number }}</title>
+    <title>{{ strtoupper($sale->document_type ?? 'boleta') }} {{ $sale->receipt_number }}</title>
     <style>
         body { font-family: 'DejaVu Sans', sans-serif; font-size: 12px; color: #333; }
         .header { display: flex; align-items: center; border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 20px; }
@@ -26,19 +26,19 @@
 </head>
 <body>
     <div class="header">
-        @if(file_exists(public_path('images/logo.png')))
+        @if(file_exists(public_path('image/logo.jpeg')))
             <img src="{{ public_path('images/logo.png') }}" class="logo">
         @endif
         <div class="business-info">
             <div class="business-name">CÉSPEDES STORE</div>
             <div class="business-sub">
                 Reparación de Celulares - Repuestos y Accesorios<br>
-                RUC: 12345678901 | Tel: 999-999-999<br>
+                RUC: {{ config("services.business.ruc", "Configurar RUC del negocio") }}<br>
                 Av. Principal 123
             </div>
         </div>
         <div>
-            <div class="receipt-title">BOLETA DE VENTA</div>
+            <div class="receipt-title">{{ ($sale->document_type ?? 'boleta') === 'factura' ? 'FACTURA' : 'BOLETA DE VENTA' }}</div>
             <div class="receipt-number">{{ $sale->receipt_number }}</div>
         </div>
     </div>
@@ -49,6 +49,7 @@
                 <td><strong>Fecha:</strong> {{ $sale->created_at->format('d/m/Y H:i') }}</td>
                 <td><strong>Cliente:</strong> {{ $sale->customer_name }}</td>
             </tr>
+            <tr><td><strong>{{ ($sale->document_type ?? 'boleta') === 'factura' ? 'RUC' : 'DNI' }}:</strong> {{ $sale->customer_document ?: '—' }}</td><td><strong>Dirección:</strong> {{ $sale->customer_address ?: '—' }}</td></tr>
         </table>
     </div>
 
@@ -72,6 +73,8 @@
             @endforeach
         </tbody>
         <tfoot>
+            <tr><td colspan="3" class="right">SUBTOTAL:</td><td class="right">S/ {{ number_format((float) ($sale->subtotal ?? $sale->total), 2) }}</td></tr>
+            <tr><td colspan="3" class="right">DESCUENTO ({{ number_format((float) ($sale->discount_percent ?? 0), 2) }}%):</td><td class="right">− S/ {{ number_format((float) ($sale->discount_amount ?? 0), 2) }}</td></tr>
             <tr class="total-row">
                 <td colspan="3" class="right">TOTAL:</td>
                 <td class="right">S/ {{ number_format($sale->total, 2) }}</td>

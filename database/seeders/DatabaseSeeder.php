@@ -5,21 +5,23 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Nunca crear credenciales públicas o contraseñas predeterminadas.
+        $email = env('POS_ADMIN_EMAIL');
+        $password = env('POS_ADMIN_PASSWORD');
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        if (is_string($email) && $email !== '' && is_string($password) && strlen($password) >= 12) {
+            User::firstOrCreate(
+                ['email' => $email],
+                ['name' => env('POS_ADMIN_NAME', 'Administrador'), 'password' => Hash::make($password)]
+            );
+        }
     }
 }
