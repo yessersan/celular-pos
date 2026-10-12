@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Collection;
 class SalesReport extends Component
 {
     public string $period = 'today';
+    public string $search = '';
+    public string $documentType = '';
 
     /** @var Collection<int, Sale> */
     public Collection $sales;
@@ -23,10 +25,9 @@ class SalesReport extends Component
         $this->loadReport();
     }
 
-    public function updatedPeriod(): void
-    {
-        $this->loadReport();
-    }
+    public function updatedPeriod(): void { $this->loadReport(); }
+    public function updatedSearch(): void { $this->loadReport(); }
+    public function updatedDocumentType(): void { $this->loadReport(); }
 
     public function loadReport(): void
     {
@@ -35,7 +36,16 @@ class SalesReport extends Component
             $this->period = 'today';
         }
 
-        $query = Sale::with('items');
+        $query = Sale::with('items')
+            ->when(trim($this->search) !== '', function ($q) {
+                $term = trim($this->search);
+                $q->where(function ($inner) use ($term) {
+                    $inner->where('receipt_number', 'like', '%'.$term.'%')
+                        ->orWhere('customer_name', 'like', '%'.$term.'%')
+                        ->orWhere('customer_document', 'like', '%'.$term.'%');
+                });
+            })
+            ->when(in_array($this->documentType, ['boleta', 'factura'], true), fn ($q) => $q->where('document_type', $this->documentType));
 
         switch ($this->period) {
             case 'today':
