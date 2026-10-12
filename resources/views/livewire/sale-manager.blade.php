@@ -1,211 +1,72 @@
 <div>
-    {{-- Título --}}
-    <h2 class="text-xl font-bold mb-4">Nueva Venta</h2>
+    <h2 class="text-xl font-bold mb-4">Nueva venta</h2>
+    @if (session()->has('message')) <div class="bg-green-100 text-green-800 p-3 rounded mb-3">{{ session('message') }}</div> @endif
+    @if (session()->has('error')) <div class="bg-red-100 text-red-800 p-3 rounded mb-3">{{ session('error') }}</div> @endif
 
-    {{-- Mensajes --}}
-    @if (session()->has('message'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-            {{ session('message') }}
-        </div>
-    @endif
-
-    @if (session()->has('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    {{-- Todo el contenido de tu formulario de ventas --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {{-- Agregar producto --}}
-        <div class="bg-gray-50 p-4 rounded border">
-            <h3 class="font-semibold mb-2">Agregar Producto</h3>
-
-            <select wire:model="selectedProduct"
-                    class="w-full border rounded px-3 py-2 mb-2">
-                <option value="">Seleccionar producto...</option>
-
-                @foreach ($products as $product)
-                    <option value="{{ $product->id }}">
-                        {{ $product->name }}
-                        (Stock: {{ $product->stock }})
-                        - S/ {{ number_format($product->sale_price, 2) }}
-                    </option>
-                @endforeach
-            </select>
-
-            <div class="flex gap-2">
-                <input type="number"
-                       wire:model="quantity"
-                       min="1"
-                       class="w-24 border rounded px-3 py-2">
-
-                <button type="button"
-                        wire:click="addProduct"
-                        class="bg-blue-600 text-white px-4 py-2 rounded">
-                    Agregar
-                </button>
+    <section class="bg-white border rounded p-4 mb-5">
+        <h3 class="font-semibold mb-3">Datos del cliente y comprobante</h3>
+        <div class="grid md:grid-cols-2 gap-3">
+            <div>
+                <label class="block text-sm">Tipo de comprobante</label>
+                <select wire:model.live="document_type" class="w-full border rounded p-2">
+                    <option value="boleta">Boleta</option><option value="factura">Factura</option>
+                </select>
             </div>
-
-            @error('selectedProduct')
-                <span class="text-red-500 text-sm">{{ $message }}</span>
-            @enderror
-
-            @error('quantity')
-                <span class="text-red-500 text-sm">{{ $message }}</span>
-            @enderror
+            <div>
+                <label class="block text-sm">{{ $document_type === 'factura' ? 'RUC (11 dígitos)' : 'DNI (8 dígitos)' }}</label>
+                <div class="flex gap-2">
+                    <input wire:model="customer_document" inputmode="numeric" maxlength="11" class="min-w-0 flex-1 border rounded p-2" placeholder="Documento del cliente">
+                    @if ($document_type === 'boleta')
+                        <button type="button" wire:click="lookupDni" wire:loading.attr="disabled" class="bg-blue-700 text-white rounded px-3">Consultar DNI</button>
+                    @endif
+                </div>
+                @error('customer_document') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+            </div>
+            <div><label class="block text-sm">Nombre / Razón social</label><input wire:model="customer_name" class="w-full border rounded p-2" placeholder="Nombre del cliente o empresa">@error('customer_name') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror</div>
+            <div><label class="block text-sm">Dirección fiscal</label><input wire:model="customer_address" class="w-full border rounded p-2" placeholder="Dirección">@error('customer_address') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror</div>
         </div>
+        <p class="text-xs text-gray-500 mt-2">La consulta DNI requiere configurar APISPERU_TOKEN en el archivo .env.</p>
+    </section>
 
-        {{-- Agregar servicio --}}
-        <div class="bg-gray-50 p-4 rounded border">
-            <h3 class="font-semibold mb-2">Agregar Servicio</h3>
-
-            <select wire:model="selectedService"
-                    class="w-full border rounded px-3 py-2 mb-2">
-                <option value="">Seleccionar servicio...</option>
-
-                @foreach ($services as $service)
-                    <option value="{{ $service->id }}">
-                        {{ $service->name }}
-                        - S/ {{ number_format($service->price, 2) }}
-                    </option>
-                @endforeach
+    <div class="grid md:grid-cols-2 gap-4 mb-5">
+        <section class="bg-white border rounded p-4">
+            <h3 class="font-semibold mb-2">Agregar producto</h3>
+            <input wire:model.live.debounce.300ms="productSearch" class="w-full border rounded p-2 mb-2" placeholder="Buscar producto por nombre">
+            <select wire:model="selectedProduct" class="w-full border rounded p-2 mb-2"><option value="">Seleccionar producto...</option>
+                @foreach ($products as $product) <option value="{{ $product->id }}">{{ $product->name }} (stock: {{ $product->stock }}) — S/ {{ number_format($product->sale_price, 2) }}</option> @endforeach
             </select>
-
-            <button type="button"
-                    wire:click="addService"
-                    class="bg-blue-600 text-white px-4 py-2 rounded w-full">
-                Agregar Servicio
-            </button>
-
-            @error('selectedService')
-                <span class="text-red-500 text-sm">{{ $message }}</span>
-            @enderror
-        </div>
+            <div class="flex gap-2"><input type="number" wire:model="quantity" min="1" class="w-24 border rounded p-2"><button type="button" wire:click="addProduct" class="bg-blue-700 text-white rounded px-4">Agregar</button></div>
+            @error('selectedProduct') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+            @error('quantity') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+        </section>
+        <section class="bg-white border rounded p-4">
+            <h3 class="font-semibold mb-2">Agregar servicio</h3>
+            <input wire:model.live.debounce.300ms="serviceSearch" class="w-full border rounded p-2 mb-2" placeholder="Buscar servicio por nombre">
+            <select wire:model="selectedService" class="w-full border rounded p-2 mb-2"><option value="">Seleccionar servicio...</option>
+                @foreach ($services as $service) <option value="{{ $service->id }}">{{ $service->name }} — S/ {{ number_format($service->price, 2) }}</option> @endforeach
+            </select>
+            <button type="button" wire:click="addService" class="bg-blue-700 text-white rounded px-4 py-2">Agregar servicio</button>
+            @error('selectedService') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+        </section>
     </div>
 
-    {{-- Carrito --}}
-    @if (!empty($items))
-        <div class="overflow-x-auto mb-4">
-            <table class="min-w-full bg-white border">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="py-2 px-4 border">Descripción</th>
-                        <th class="py-2 px-4 border">Tipo</th>
-                        <th class="py-2 px-4 border">P. Unitario</th>
-                        <th class="py-2 px-4 border">Cantidad</th>
-                        <th class="py-2 px-4 border">Subtotal</th>
-                        <th class="py-2 px-4 border">Acción</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach ($items as $index => $item)
-                        <tr wire:key="sale-item-{{ $index }}">
-                            <td class="py-2 px-4 border">{{ $item['name'] }}</td>
-
-                            <td class="py-2 px-4 border text-center">
-                                {{ $item['type'] === 'product' ? 'Producto' : 'Servicio' }}
-                            </td>
-
-                            <td class="py-2 px-4 border text-right">
-                                S/ {{ number_format($item['unit_price'], 2) }}
-                            </td>
-
-                            <td class="py-2 px-4 border text-center">
-                                {{ $item['quantity'] }}
-                            </td>
-
-                            <td class="py-2 px-4 border text-right">
-                                S/ {{ number_format($item['subtotal'], 2) }}
-                            </td>
-
-                            <td class="py-2 px-4 border text-center">
-                                <button type="button"
-                                        wire:click="removeItem({{ $index }})"
-                                        class="text-red-600 hover:underline">
-                                    ✕
-                                </button>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-
-                <tfoot>
-                    <tr class="bg-gray-50 font-bold">
-                        <td colspan="4" class="py-2 px-4 border text-right">
-                            TOTAL:
-                        </td>
-
-                        <td class="py-2 px-4 border text-right">
-                            S/ {{ number_format($this->getTotalProperty(), 2) }}
-                        </td>
-
-                        <td class="border"></td>
-                    </tr>
-                </tfoot>
-            </table>
+    <section class="bg-white border rounded p-4">
+        <h3 class="font-semibold mb-3">Detalle de venta</h3>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+            <thead><tr class="bg-gray-100"><th class="p-2 text-left">Artículo</th><th class="p-2">Tipo</th><th class="p-2 text-right">Precio unit.</th><th class="p-2">Cant.</th><th class="p-2 text-right">Subtotal</th><th></th></tr></thead>
+            <tbody>
+            @forelse ($items as $index => $item)
+                <tr wire:key="sale-item-{{ $index }}" class="border-t"><td class="p-2">{{ $item['name'] }}</td><td class="p-2 text-center">{{ $item['type'] === 'product' ? 'Producto' : 'Servicio' }}</td><td class="p-2 text-right">S/ {{ number_format($item['unit_price'], 2) }}</td><td class="p-2 text-center">{{ $item['quantity'] }}</td><td class="p-2 text-right">S/ {{ number_format($item['subtotal'], 2) }}</td><td class="p-2"><button type="button" wire:click="removeItem({{ $index }})" class="text-red-600">Quitar</button></td></tr>
+            @empty <tr><td colspan="6" class="p-4 text-center text-gray-500">Agrega productos o servicios para comenzar.</td></tr> @endforelse
+            </tbody>
+        </table></div>
+        <div class="max-w-sm ml-auto mt-4 space-y-2">
+            <div class="flex justify-between"><span>Subtotal</span><strong>S/ {{ number_format($this->subtotal, 2) }}</strong></div>
+            <div class="flex justify-between items-center gap-3"><label for="discount">Descuento (%)</label><input id="discount" type="number" min="0" max="100" step="0.01" wire:model.live="discount_percent" class="w-28 border rounded p-2"></div>
+            @error('discount_percent') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+            <div class="flex justify-between"><span>Descuento</span><strong>− S/ {{ number_format($this->discountAmount, 2) }}</strong></div>
+            <div class="flex justify-between text-lg border-t pt-2"><span>Total</span><strong>S/ {{ number_format($this->total, 2) }}</strong></div>
+            <button type="button" wire:click="saveSale" wire:loading.attr="disabled" class="w-full bg-green-700 text-white rounded px-4 py-3 font-semibold">Confirmar venta</button>
         </div>
-
-        {{-- Registrar venta --}}
-        <div class="flex flex-col md:flex-row gap-4 items-end mb-4">
-            <div class="flex-1 w-full">
-                <label for="customer_name" class="block text-sm font-medium mb-1">
-                    Nombre del cliente (opcional)
-                </label>
-
-                <input id="customer_name"
-                       type="text"
-                       wire:model="customer_name"
-                       class="w-full border rounded px-3 py-2"
-                       placeholder="Cliente general">
-            </div>
-
-            <button type="button"
-                    wire:click="saveSale"
-                    wire:loading.attr="disabled"
-                    wire:target="saveSale"
-                    class="bg-green-600 text-white px-6 py-2 rounded font-bold">
-                <span wire:loading.remove wire:target="saveSale">
-                    Registrar Venta y Generar Boleta
-                </span>
-
-                <span wire:loading wire:target="saveSale">
-                    Registrando...
-                </span>
-            </button>
-        </div>
-
-        {{-- Boleta --}}
-        @if ($saleCompleted)
-            <div class="mt-4 flex flex-wrap gap-3 items-center bg-green-50 border-l-4 border-green-500 p-4 rounded">
-                <div class="flex-1">
-                    <p class="font-semibold text-green-800">
-                        Venta #{{ $saleCompleted }} registrada
-                    </p>
-
-                    <p class="text-sm text-green-700">
-                        ¿Deseas imprimir la boleta?
-                    </p>
-                </div>
-
-                <button type="button"
-                        wire:click="printReceipt({{ $saleCompleted }})"
-                        class="bg-blue-700 text-white px-4 py-2 rounded-lg">
-                    Imprimir boleta
-                </button>
-
-                <button type="button"
-                        wire:click="downloadPdf({{ $saleCompleted }})"
-                        class="bg-gray-600 text-white px-4 py-2 rounded-lg">
-                    Descargar PDF
-                </button>
-            </div>
-        @endif
-
-    @else
-        <p class="text-gray-500 text-center py-8">
-            Agregue productos o servicios para comenzar.
-        </p>
-    @endif
+    </section>
 </div>
