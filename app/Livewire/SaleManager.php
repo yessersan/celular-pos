@@ -78,6 +78,7 @@ class SaleManager extends Component
             session()->flash('error', 'Stock insuficiente. Disponible: '.$product->stock);
             return;
         }
+        $this->saleCompleted = null;
         $this->items[] = [
             'type' => 'product', 'id' => $product->id, 'name' => $product->name,
             'unit_price' => (float) $product->sale_price, 'quantity' => $this->quantity,
@@ -91,6 +92,7 @@ class SaleManager extends Component
     {
         $this->validate(['selectedService' => 'required|exists:services,id']);
         $service = Service::findOrFail($this->selectedService);
+        $this->saleCompleted = null;
         $this->items[] = [
             'type' => 'service', 'id' => $service->id, 'name' => $service->name,
             'unit_price' => (float) $service->price, 'quantity' => 1,
@@ -210,7 +212,7 @@ class SaleManager extends Component
             return;
         }
 
-        $this->reset(['items', 'customer_name', 'customer_document', 'customer_address', 'discount_percent', 'saleCompleted']);
+        $this->reset(['items', 'customer_name', 'customer_document', 'customer_address', 'discount_percent']);
         $this->document_type = 'boleta';
         $this->discount_percent = '0';
         $this->loadCatalogs();
