@@ -35,6 +35,10 @@ return [
         ],
     ],
 
+    'business' => [
+        'ruc' => env('BUSINESS_RUC', ''),
+    ],
+
     'apisperu' => [
         'url' => env('APISPERU_URL', 'https://api.apisperu.com/api/v1/dni'),
         'token' => env('APISPERU_TOKEN'),
