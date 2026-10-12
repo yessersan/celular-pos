@@ -88,6 +88,12 @@
             </div>
         </div>
 
+        <div class="rounded-lg bg-white p-4 shadow mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div><label class="block text-sm font-medium mb-1">Buscar venta / cliente / documento</label><input wire:model.live.debounce.300ms="search" class="w-full border rounded p-2" placeholder="N.º, nombre, DNI o RUC"></div>
+            <div><label class="block text-sm font-medium mb-1">Tipo de comprobante</label><select wire:model.live="documentType" class="w-full border rounded p-2"><option value="">Todos</option><option value="boleta">Boleta</option><option value="factura">Factura</option></select></div>
+            <div class="flex items-end"><button type="button" wire:click="$set('search', '')" class="border rounded px-4 py-2">Limpiar búsqueda</button></div>
+        </div>
+
         {{-- Tabla de ventas --}}
         <div class="rounded-lg bg-white shadow">
             <div class="border-b p-4">
