@@ -26,7 +26,7 @@
 </head>
 <body>
     <div class="header">
-        @if(file_exists(public_path('images/logo.png')))
+        @if(file_exists(public_path('image/logo.jpeg')))
             <img src="{{ public_path('images/logo.png') }}" class="logo">
         @endif
         <div class="business-info">
