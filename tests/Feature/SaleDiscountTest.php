@@ -12,7 +12,7 @@ class SaleDiscountTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_discount_is_limited_to_sale_total_and_does_not_change_product_price(): void
+    public function test_discount_is_applied_to_sale_without_changing_product_price(): void
     {
         $product = Product::create([
             'name' => 'Test phone',
@@ -30,11 +30,16 @@ class SaleDiscountTest extends TestCase
                 'quantity' => 1,
                 'subtotal' => 100,
             ]])
+            ->set('customer_name', 'Cliente prueba')
+            ->set('customer_document_type', 'DNI')
+            ->set('customer_document_number', '12345678')
+            ->set('voucher_type', 'BOLETA')
             ->set('discount_amount', 20)
             ->call('saveSale')
             ->assertHasNoErrors();
 
         $this->assertDatabaseHas('sales', [
+            'customer_name' => 'Cliente prueba',
             'subtotal' => 100,
             'discount_amount' => 20,
             'total' => 80,
