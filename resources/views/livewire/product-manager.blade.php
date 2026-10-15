@@ -85,7 +85,39 @@
     </div>
     @endif
 
+    @if (session()->has('error'))
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded mb-4">{{ session('error') }}</div>
+    @endif
+
+    <section class="bg-white rounded-lg shadow p-4 mb-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 items-end">
+            <div class="xl:col-span-2">
+                <label for="product-search" class="block text-sm font-medium text-gray-700 mb-1">Buscar producto</label>
+                <input id="product-search" type="search" wire:model.live.debounce.300ms="search" placeholder="Nombre del producto..." class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="stock-filter" class="block text-sm font-medium text-gray-700 mb-1">Disponibilidad</label>
+                <select id="stock-filter" wire:model.live="stockFilter" class="w-full rounded-lg border-gray-300 shadow-sm">
+                    <option value="">Todo el stock</option><option value="available">Disponible</option><option value="low">Stock bajo (1–3)</option><option value="out">Agotado</option>
+                </select>
+            </div>
+            <div>
+                <label for="min-price" class="block text-sm font-medium text-gray-700 mb-1">Precio mínimo (S/)</label>
+                <input id="min-price" type="number" min="0" step="0.01" wire:model.live.debounce.300ms="minPrice" class="w-full rounded-lg border-gray-300 shadow-sm" placeholder="0.00">
+            </div>
+            <div>
+                <label for="max-price" class="block text-sm font-medium text-gray-700 mb-1">Precio máximo (S/)</label>
+                <input id="max-price" type="number" min="0" step="0.01" wire:model.live.debounce.300ms="maxPrice" class="w-full rounded-lg border-gray-300 shadow-sm" placeholder="Sin límite">
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 mt-3">
+            <span class="text-sm text-gray-500">{{ $products->count() }} producto(s) encontrado(s)</span>
+            <button type="button" wire:click="clearFilters" class="text-sm text-blue-700 hover:underline">Limpiar filtros</button>
+        </div>
+    </section>
+
     <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
         <table class="min-w-full">
             <thead class="bg-blue-700 text-white">
                 <tr>
@@ -102,8 +134,7 @@
                 <tr class="hover:bg-gray-50">
                     <td class="py-3 px-4">
                         @if ($product->image)
-                            <img src="{{ asset('storage/'.$product->image) }}"
-                                 class="w-12 h-12 rounded object-cover border">
+                            <img src="{{ $product->image_url }}" alt="{{ $product->name }}" loading="lazy" class="w-12 h-12 rounded object-cover border" onerror="this.onerror=null;this.style.display='none';">
                         @else
                             <div class="w-12 h-12 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">—</div>
                         @endif
@@ -118,7 +149,12 @@
                         </span>
                     </td>
                     <td class="py-3 px-4 text-center space-x-3">
-                        <button wire:click="edit({{ $product->id }})"
+                        @if ($product->stock > 0)
+                            <button wire:click="sell({{ $product->id }})" class="inline-flex items-center rounded bg-green-600 px-3 py-1.5 text-white text-sm font-semibold hover:bg-green-700">Vender</button>
+                        @else
+                            <button disabled class="inline-flex items-center rounded bg-gray-300 px-3 py-1.5 text-gray-500 text-sm">Agotado</button>
+                        @endif
+                        <button wire:click="edit({{ $product->id }})
                                 class="text-blue-600 hover:text-blue-800 text-sm font-medium">Editar</button>
                         <button wire:click="delete({{ $product->id }})"
                                 wire:confirm="¿Eliminar este producto?"
@@ -130,5 +166,6 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </div>
