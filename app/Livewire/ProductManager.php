@@ -25,6 +25,10 @@ class ProductManager extends Component
     public int $stock = 0;
     public ?int $editId = null;
     public bool $showForm = false;
+    public string $search = '';
+    public string $stockFilter = '';
+    public string $minPrice = '';
+    public string $maxPrice = '';
 
     protected array $rules = [
         'name' => 'required|string|max:255',
@@ -40,9 +44,38 @@ class ProductManager extends Component
         $this->loadProducts();
     }
 
+    public function updatedSearch(): void { $this->loadProducts(); }
+    public function updatedStockFilter(): void { $this->loadProducts(); }
+    public function updatedMinPrice(): void { $this->loadProducts(); }
+    public function updatedMaxPrice(): void { $this->loadProducts(); }
+
     public function loadProducts(): void
     {
-        $this->products = Product::orderBy('name')->get();
+        $this->products = Product::query()
+            ->when(trim($this->search) !== '', fn ($query) => $query->where('name', 'like', '%'.trim($this->search).'%'))
+            ->when($this->stockFilter === 'available', fn ($query) => $query->where('stock', '>', 0))
+            ->when($this->stockFilter === 'low', fn ($query) => $query->whereBetween('stock', [1, 3]))
+            ->when($this->stockFilter === 'out', fn ($query) => $query->where('stock', 0))
+            ->when($this->minPrice !== '' && is_numeric($this->minPrice), fn ($query) => $query->where('sale_price', '>=', (float) $this->minPrice))
+            ->when($this->maxPrice !== '' && is_numeric($this->maxPrice), fn ($query) => $query->where('sale_price', '<=', (float) $this->maxPrice))
+            ->orderBy('name')->get();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['search', 'stockFilter', 'minPrice', 'maxPrice']);
+        $this->loadProducts();
+    }
+
+    public function sell(int $id): mixed
+    {
+        $product = Product::findOrFail($id);
+        if ($product->stock < 1) {
+            session()->flash('error', 'Este producto no tiene stock disponible.');
+            return null;
+        }
+
+        return redirect()->route('sales', ['product' => $product->id]);
     }
 
     public function save(): void
@@ -57,6 +90,10 @@ class ProductManager extends Component
                 Storage::disk('public')->delete($this->currentImage);
             }
             $imagePath = $this->image->store('products', 'public');
+            if (!$imagePath) {
+                $this->addError('image', 'No se pudo guardar la imagen. Verifica los permisos de storage.');
+                return;
+            }
         }
 
         $data = [
