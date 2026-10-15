@@ -154,8 +154,7 @@
                         @else
                             <button disabled class="inline-flex items-center rounded bg-gray-300 px-3 py-1.5 text-gray-500 text-sm">Agotado</button>
                         @endif
-                        <button wire:click="edit({{ $product->id }})
-                                class="text-blue-600 hover:text-blue-800 text-sm font-medium">Editar</button>
+                        <button type="button" wire:click="edit({{ $product->id }})" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Editar</button>
                         <button wire:click="delete({{ $product->id }})"
                                 wire:confirm="¿Eliminar este producto?"
                                 class="text-red-600 hover:text-red-800 text-sm font-medium">Eliminar</button>
