@@ -39,6 +39,17 @@ class SaleManager extends Component
         $this->products = collect();
         $this->services = collect();
         $this->loadCatalogs();
+
+        $productId = request()->query('product');
+        if ($productId && ctype_digit((string) $productId)) {
+            $product = Product::find((int) $productId);
+            if ($product && $product->stock > 0) {
+                $this->selectedProduct = $product->id;
+                $this->quantity = 1;
+                $this->addProduct();
+                session()->flash('message', 'Producto agregado a la venta. Revisa la cantidad y confirma cuando estés listo.');
+            }
+        }
     }
 
     public function updatedProductSearch(): void { $this->loadCatalogs(); }
